@@ -8,12 +8,11 @@ const participantInterviewRelation = require('../models/participantInterviewRela
 
 router.get('/',async(req,res)=>{
     const date=new Date(Date.now());
-    console.log(date);
+    
     var interviews=await Interview.find({'startTime':{$gte:date}}).lean();
     for(var i=0; i<interviews.length; i++){
         var participant=await participantInterviewRelation.find({'interviewId':interviews[i]._id});
         var t=[]
-        console.log(participant);
         for(var j=0; j<participant.length; j++){
             let participantOne=await Participant.findOne({'_id':participant[j].participantId});
             t.push(participantOne);
@@ -21,31 +20,58 @@ router.get('/',async(req,res)=>{
         interviews[i]["participants"]=t;
     }
     
-    console.log(interviews);
+    // console.log(interviews);
     res.json(interviews);
 });
 
 router.post('/',async(req,res)=>{
     var {title,location,description,startTime,endTime,participants}=req.body;
     var temp=await Participant.find({"email":{"$in":participants}});
-    var interview=new Interview({
-        title: title,
-        location: location,
-        description: description,
-        startTime: startTime,
-        endTime: endTime
-    });
-    interview.save();
+    var conflict=false;
     for(var i=0; i<temp.length; i++){
-        const data=new ParticipantInterviewRelation({
-            interviewId: interview.id,
-            participantId: temp[i].id
-        });
-        data.save();
-    }
-    res.status('200').send('Interview data saved');    
+        var participant=await participantInterviewRelation.find({'participationId':temp[i]._id});
+        for(var j=0; j<participant.length; j++){
+            var interviewDesc=await Interview.findOne({'_id':participant[i].interviewId});
+            const startt=new Date(startTime);
+            const interviewst=new Date(interviewDesc.startTime);
+            const interviewet=new Date(interviewDesc.endTime);
 
-    
+            if(startt>= interviewst && startt<=interviewet){
+                conflict=true;
+                break;
+            }
+        }
+        if(conflict){
+            break;
+        }
+    }
+    if(conflict){
+        console.log("hello");
+        res.status('200').send('Particpant schedule conflicting');
+
+    }else{
+        var interview=new Interview({
+            title: title,
+            location: location,
+            description: description,
+            startTime: startTime,
+            endTime: endTime
+        });
+        interview.save();
+        for(var i=0; i<temp.length; i++){
+            const data=new ParticipantInterviewRelation({
+                interviewId: interview.id,
+                participantId: temp[i].id
+            });
+            data.save();
+        }
+        res.status('201').send('Success : Interview data saved');
+    }
+});
+
+router.put('/',(req,res)=>{
+    console.log(req.body);
+    res.status('200').send('Success : Interview data updated');
 
 });
 
