@@ -42,8 +42,7 @@ router.get("/", async (req, res) => {
 });
 
 router.post("/", async (req, res) => {
-  var { title, location, description, startTime, endTime, participants } =
-    req.body;
+  var { title, location, description, startTime, endTime, participants } =req.body;
   var temp = await Participant.find({ email: { $in: participants } });
   console.log(temp);
   var conflict = false;
@@ -66,10 +65,7 @@ router.post("/", async (req, res) => {
       const interviewst = new Date(interviewDesc.startTime);
       const interviewet = new Date(interviewDesc.endTime);
 
-      if (
-        (startt >= interviewst && startt <= interviewet) ||
-        endt <= interviewet
-      ) {
+      if (startt <= interviewet && endt >= interviewst) {
         conflict = true;
         break;
       }
