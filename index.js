@@ -19,6 +19,6 @@ db.on('error', console.error.bind(console, 'MongoDB connection error:'));
 
 app.use('/',participantRoute);
 app.use('/interview',interviewRoute);
-app.listen(5000,()=>{
-    console.log("server is running on port 5000");
+app.listen(process.env.PORT || 5000,()=>{
+    console.log("server is running");
 });
